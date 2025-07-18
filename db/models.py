@@ -21,8 +21,14 @@ class Veiculo(Base):
     def __repr__(self):
         return f"<Veiculo(id={self.id}, marca={self.marca}, modelo='{self.modelo}', ano={self.ano}, cor='{self.cor}')>, valor={self.valor}>"
     
-    def __init__(self, marca, modelo, ano, cor):
+    def __init__(self, marca, modelo, ano, motorizacao, combustivel, cor, quilometragem, numero_portas, transmissao, valor):
         self.marca = marca
         self.modelo = modelo
         self.ano = ano
+        self.motorizacao = motorizacao
+        self.combustivel = combustivel
         self.cor = cor
+        self.quilometragem = quilometragem
+        self.numero_portas = numero_portas
+        self.transmissao = transmissao
+        self.valor = valor
