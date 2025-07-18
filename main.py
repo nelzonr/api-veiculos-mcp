@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi_mcp import FastApiMCP
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -10,7 +11,7 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title="API de Veículos")
 
 def get_db():
     db = SessionLocal()
@@ -19,7 +20,7 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/veiculos")
+@app.get("/veiculos", operation_id="buscar_veiculos")
 def buscar_veiculos(
     marca: str = None,
     modelo: str = None,
@@ -45,3 +46,13 @@ def buscar_veiculos(
     if transmissao: query = query.filter(Veiculo.transmissao == transmissao)
     if valor: query = query.filter(Veiculo.valor == valor)
     return query.all()
+
+if __name__ == "__main__":
+    mcp = FastApiMCP(app, include_operations=["buscar_veiculos"])
+    mcp.mount()
+
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+# To run the server, use the command:
+# uvicorn server.server:app --reload
+# This will start the FastAPI server with live reloading enabled.
