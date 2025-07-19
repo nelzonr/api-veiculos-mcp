@@ -1,62 +1,12 @@
-"""
-Script para popular o banco de dados com dados fictícios de veículos.
-Utiliza a biblioteca Faker para gerar dados aleatórios realistas.
-"""
-
-import os
-import sys
 import random
-import logging
-from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
-from models.veiculo import Base, Veiculo
 from faker import Faker
-
-# Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-# Carregar variáveis de ambiente
-load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    logger.error("Variável DATABASE_URL não encontrada no arquivo .env")
-    sys.exit(1)
+from sqlalchemy.exc import SQLAlchemyError
+from core.logger import logger
+from core.database import create_tables, SessionLocal
+from core.models import Veiculo
 
 # Inicializar Faker com localização brasileira
 fake = Faker("pt_BR")
-
-# Inicializar variáveis globais para conexão com o banco
-engine = None
-Session = None
-session = None
-
-def setup_database():
-    """Configura a conexão com o banco de dados e inicializa as tabelas."""
-    global engine, Session, session
-    try:
-        engine = create_engine(DATABASE_URL)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        
-        # Criar tabelas e limpar dados existentes
-        Base.metadata.create_all(engine)
-        session.query(Veiculo).delete()
-        session.commit()
-        
-        logger.info("Conexão com banco de dados estabelecida com sucesso")
-        return True
-    except SQLAlchemyError as e:
-        logger.error(f"Erro ao configurar banco de dados: {str(e)}")
-        if session:
-            session.rollback()
-        return False
 
 # Configurações para geração dos veiculos
 QUANTIDADE_VEICULOS = 100
@@ -83,6 +33,21 @@ VALOR_MINIMO, VALOR_MAXIMO = 10000, 100000
 
 def populate_veiculos():
     """Popula o banco de dados com veículos fictícios."""
+
+    create_tables()
+    session = SessionLocal()
+
+    # Limpar tabela antes de popular
+    try:
+        session.query(Veiculo).delete()
+        session.commit()
+        logger.info("Tabela de veículos limpa antes da população.")
+    except SQLAlchemyError as e:
+        logger.error(f"Erro ao limpar tabela de veículos: {str(e)}")
+        session.rollback()
+        session.close()
+        return False
+
     veiculos_adicionados = 0
     try:
         logger.info(f"Iniciando população de {QUANTIDADE_VEICULOS} veículos...")
@@ -125,21 +90,19 @@ def populate_veiculos():
         if session:
             session.rollback()
         return False
-
-def main():
-    """Função principal do script."""
-    if not setup_database():
-        sys.exit(1)
     
-    try:
-        if populate_veiculos():
-            logger.info("Script executado com sucesso!")
-        else:
-            logger.error("Falha ao popular veículos.")
-            sys.exit(1)
     finally:
         if session:
             session.close()
+        logger.info("Sessão de banco de dados fechada.")
+
+
+def main():
+    """Função principal do script."""
+    if populate_veiculos():
+        logger.info("Script executado com sucesso!")
+    else:
+        logger.error("Falha ao popular veículos.")
 
 if __name__ == "__main__":
     main()
