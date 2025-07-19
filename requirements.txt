@@ -44,4 +44,4 @@ typing_extensions==4.14.1
 tzdata==2025.2
 urllib3==2.5.0
 uvicorn==0.35.0
--e git+https://github.com/nelzonr/api-veiculos-mcp.git@0f895b12fd0386b4b6e12f0d841ea1be1b1bf5a3#egg=veiculos
+-e git+https://github.com/nelzonr/api-veiculos-mcp.git@26dff2ef24e6e8f2163e63e3f1d1429f7855d289#egg=veiculos
