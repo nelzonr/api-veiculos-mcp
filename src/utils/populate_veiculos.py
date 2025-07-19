@@ -1,28 +1,66 @@
+"""
+Script para popular o banco de dados com dados fictícios de veículos.
+Utiliza a biblioteca Faker para gerar dados aleatórios realistas.
+"""
+
 import os
+import sys
 import random
+import logging
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
 from models.veiculo import Base, Veiculo
 from faker import Faker
 
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Carregar variáveis de ambiente
 load_dotenv()
-
 DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL)
-Session = sessionmaker(bind=engine)
-session = Session()
 
-Base.metadata.create_all(engine)
-session.query(Veiculo).delete()
-session.commit()
+if not DATABASE_URL:
+    logger.error("Variável DATABASE_URL não encontrada no arquivo .env")
+    sys.exit(1)
 
+# Inicializar Faker com localização brasileira
 fake = Faker("pt_BR")
 
-quantidade_veiculos = 100
-print(f"Populando {quantidade_veiculos} veículos...")
+# Inicializar variáveis globais para conexão com o banco
+engine = None
+Session = None
+session = None
 
-marcas_modelos = [
+def setup_database():
+    """Configura a conexão com o banco de dados e inicializa as tabelas."""
+    global engine, Session, session
+    try:
+        engine = create_engine(DATABASE_URL)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        
+        # Criar tabelas e limpar dados existentes
+        Base.metadata.create_all(engine)
+        session.query(Veiculo).delete()
+        session.commit()
+        
+        logger.info("Conexão com banco de dados estabelecida com sucesso")
+        return True
+    except SQLAlchemyError as e:
+        logger.error(f"Erro ao configurar banco de dados: {str(e)}")
+        if session:
+            session.rollback()
+        return False
+
+# Configurações para geração dos veiculos
+QUANTIDADE_VEICULOS = 100
+MARCAS_MODELOS = [
     ("Fiat", ["Strada", "Argo", "Mobi", "Cronos"]),
     ("Volkswagen", ["Gol", "Polo", "T-Cross", "Saveiro"]),
     ("Chevrolet", ["Onix", "Tracker", "S10", "Cruze"]),
@@ -34,30 +72,74 @@ marcas_modelos = [
     ("Renault", ["Sandero", "Duster", "Captur", "Kwid"]),
     ("Peugeot", ["208", "3008", "2008", "Partner"])
 ]
-ano_minimo, ano_maximo = 2000, 2025
-motorizacoes = ('1.0', '1.3', '1.6', '2.0', '2.4', '3.0')
-combustiveis = ('Gasolina', 'Álcool', 'Flex', 'Diesel')
-cores = ("Preto", "Branco", "Prata", "Vermelho", "Azul", "Verde", "Amarelo", "Cinza")
-km_minimo, km_maximo = 1000, 200000
-numero_portas = (2, 4)
-transmissoes = ('Manual', 'Automático')
-valor_minimo, valor_maximo = 10000, 100000
+ANO_MINIMO, ANO_MAXIMO = 2000, 2025
+MOTORIZACOES = ('1.0', '1.3', '1.6', '2.0', '2.4', '3.0')
+COMBUSTIVEIS = ('Gasolina', 'Álcool', 'Flex', 'Diesel')
+CORES = ("Preto", "Branco", "Prata", "Vermelho", "Azul", "Verde", "Amarelo", "Cinza")
+KM_MINIMO, KM_MAXIMO = 1000, 200000
+NUMERO_PORTAS = (2, 4)
+TRANSMISSOES = ('Manual', 'Automático')
+VALOR_MINIMO, VALOR_MAXIMO = 10000, 100000
 
-for _ in range(quantidade_veiculos):
-    marca, modelos = random.choice(marcas_modelos)
-    veiculo = Veiculo(
-        marca=marca,
-        modelo=random.choice(modelos),
-        ano=fake.random_int(min=ano_minimo, max=ano_maximo),
-        motorizacao=fake.random_element(elements=motorizacoes),
-        combustivel=fake.random_element(elements=combustiveis),
-        cor=fake.random_element(elements=cores),
-        quilometragem=fake.random_int(min=km_minimo, max=km_maximo),
-        numero_portas=fake.random_element(elements=numero_portas),
-        transmissao=fake.random_element(elements=transmissoes),
-        valor=fake.random_int(min=valor_minimo, max=valor_maximo),
-    )
-    session.add(veiculo)
+def populate_veiculos():
+    """Popula o banco de dados com veículos fictícios."""
+    veiculos_adicionados = 0
+    try:
+        logger.info(f"Iniciando população de {QUANTIDADE_VEICULOS} veículos...")
 
-session.commit()
-print("Dados de veículos populados com sucesso!")
+        for _ in range(QUANTIDADE_VEICULOS):
+            try:
+                marca, modelos = random.choice(MARCAS_MODELOS)
+                veiculo = Veiculo(
+                    marca=marca,
+                    modelo=random.choice(modelos),
+                    ano=fake.random_int(min=ANO_MINIMO, max=ANO_MAXIMO),
+                    motorizacao=fake.random_element(elements=MOTORIZACOES),
+                    combustivel=fake.random_element(elements=COMBUSTIVEIS),
+                    cor=fake.random_element(elements=CORES),
+                    quilometragem=fake.random_int(min=KM_MINIMO, max=KM_MAXIMO),
+                    numero_portas=fake.random_element(elements=NUMERO_PORTAS),
+                    transmissao=fake.random_element(elements=TRANSMISSOES),
+                    valor=fake.random_int(min=VALOR_MINIMO, max=VALOR_MAXIMO),
+                )
+                session.add(veiculo)
+                veiculos_adicionados += 1
+                
+                # Commit a cada 10 veículos para evitar transações muito grandes
+                if veiculos_adicionados % 10 == 0:
+                    session.commit()
+                    logger.info(f"Adicionados {veiculos_adicionados} veículos...")
+                
+            except SQLAlchemyError as e:
+                logger.error(f"Erro ao adicionar veículo: {str(e)}")
+                session.rollback()
+                continue
+
+        # Commit final para garantir que todos os veículos foram salvos
+        session.commit()
+        logger.info(f"População concluída com sucesso! {veiculos_adicionados} veículos adicionados.")
+        return True
+        
+    except SQLAlchemyError as e:
+        logger.error(f"Erro na conexão com o banco de dados: {str(e)}")
+        if session:
+            session.rollback()
+        return False
+
+def main():
+    """Função principal do script."""
+    if not setup_database():
+        sys.exit(1)
+    
+    try:
+        if populate_veiculos():
+            logger.info("Script executado com sucesso!")
+        else:
+            logger.error("Falha ao popular veículos.")
+            sys.exit(1)
+    finally:
+        if session:
+            session.close()
+
+if __name__ == "__main__":
+    main()
