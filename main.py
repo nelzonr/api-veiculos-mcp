@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from db.models import Base, Veiculo
+import os
 
-DATABASE_URL = "sqlite:///db/veiculos.db"
+DATABASE_PATH = os.path.join(os.path.dirname(__file__), 'db', 'veiculos.db')
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -3,8 +3,12 @@ from sqlalchemy.orm import sessionmaker
 from models import Base, Veiculo
 from faker import Faker
 import random
+import os
 
-engine = create_engine('sqlite:///db/veiculos.db')
+DATABASE_PATH = os.path.join(os.path.dirname(__file__), 'db', 'veiculos.db')
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+
+engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 session = Session()
 
