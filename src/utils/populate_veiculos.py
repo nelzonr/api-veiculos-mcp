@@ -1,13 +1,14 @@
+import os
+import random
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, Veiculo
+from models.veiculo import Base, Veiculo
 from faker import Faker
-import random
-import os
 
-DATABASE_PATH = os.path.join(os.path.dirname(__file__), 'db', 'veiculos.db')
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+load_dotenv()
 
+DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -16,7 +17,7 @@ Base.metadata.create_all(engine)
 session.query(Veiculo).delete()
 session.commit()
 
-fake = Faker('pt_BR')
+fake = Faker("pt_BR")
 
 quantidade_veiculos = 100
 print(f"Populando {quantidade_veiculos} veículos...")
@@ -31,8 +32,7 @@ marcas_modelos = [
     ("Nissan", ["Kicks", "Versa", "Sentra", "Frontier"]),
     ("Hyundai", ["HB20", "Creta", "Tucson", "Santa Fe"]),
     ("Renault", ["Sandero", "Duster", "Captur", "Kwid"]),
-    ("Peugeot", ["208", "3008", "2008", "Partner"]),
-    ("Citroën", ["C3", "C4 Cactus", "Aircross", "Jumper"])
+    ("Peugeot", ["208", "3008", "2008", "Partner"])
 ]
 ano_minimo, ano_maximo = 2000, 2025
 motorizacoes = ('1.0', '1.3', '1.6', '2.0', '2.4', '3.0')

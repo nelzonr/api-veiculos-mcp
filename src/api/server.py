@@ -1,13 +1,17 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, Depends
 from fastapi_mcp import FastApiMCP
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from db.models import Base, Veiculo
-import os
+from models.veiculo import Base, Veiculo
 
-DATABASE_PATH = os.path.join(os.path.dirname(__file__), 'db', 'veiculos.db')
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
+SERVER_PORT = int(os.getenv("SERVER_PORT", 8000))
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -47,14 +51,17 @@ def buscar_veiculos(
     if numero_portas: query = query.filter(Veiculo.numero_portas == numero_portas)
     if transmissao: query = query.filter(Veiculo.transmissao == transmissao)
     if valor: query = query.filter(Veiculo.valor == valor)
-    return query.all()
+
+    veiculos = query.all()
+    
+    if not veiculos:
+        return {"error": "Veiculo não encontrado"}
+    
+    return veiculos
 
 if __name__ == "__main__":
     mcp = FastApiMCP(app, include_operations=["buscar_veiculos"])
     mcp.mount()
 
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-# To run the server, use the command:
-# uvicorn server.server:app --reload
-# This will start the FastAPI server with live reloading enabled.
+    uvicorn.run("server:app", host=SERVER_HOST, port=SERVER_PORT, reload=True)
