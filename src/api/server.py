@@ -26,7 +26,7 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/veiculos", operation_id="buscar_veiculos")
+@app.get("/", operation_id="buscar_veiculos")
 def buscar_veiculos(
     marca: str = None,
     modelo: str = None,
@@ -64,4 +64,4 @@ if __name__ == "__main__":
     mcp.mount()
 
     import uvicorn
-    uvicorn.run("server:app", host=SERVER_HOST, port=SERVER_PORT, reload=True)
+    uvicorn.run(app, host=SERVER_HOST, port=SERVER_PORT)
