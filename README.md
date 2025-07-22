@@ -4,7 +4,7 @@
   <a href="#dart-sobre">Sobre</a> &#xa0; | &#xa0;
   <a href="#rocket-principais-tecnologias">Tecnologias</a> &#xa0; | &#xa0;
   <a href="#white_check_mark-requisitos">Requisitos</a> &#xa0; | &#xa0;
-  <a href="#checkered_flag-instalacao">Instalação</a> &#xa0; | &#xa0;
+  <a href="#checkered_flag-instalação">Instalação</a> &#xa0; | &#xa0;
   <a href="#spiral_notepad-exemplos">Exemplos</a>
 </p>
 
@@ -85,9 +85,9 @@ $ python -m src.utils.populate_veiculos
 $ python src/api/server.py
 ```
 
-## :robot: MCP Stdio ##
-
 Use as configurações abaixo no seu MCP client para integrar a API com seu LLM favorito
+
+## :robot: MCP Stdio ##
 
 ```
 {
@@ -102,8 +102,6 @@ Use as configurações abaixo no seu MCP client para integrar a API com seu LLM 
 ```
 
 ## :globe_with_meridians: MCP SSE - API Web ##
-
-Use as configurações abaixo no seu MCP client para integrar a API com seu LLM favorito
 
 ```
 {
